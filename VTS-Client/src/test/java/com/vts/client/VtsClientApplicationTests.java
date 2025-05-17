@@ -1,10 +1,10 @@
-package com.vts.VTS;
+package com.vts.client;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class VtsApplicationTests {
+class VtsClientApplicationTests {
 
 	@Test
 	void contextLoads() {

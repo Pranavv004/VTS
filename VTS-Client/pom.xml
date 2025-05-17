@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.vts</groupId>
-	<artifactId>VTS</artifactId>
+	<artifactId>VTS-Client</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>VTS</name>
-	<description>Sample Client Management</description>
+	<name>VTS-Client</name>
+	<description>Clients</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -32,7 +32,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-websocket</artifactId>
+			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 
 		<dependency>
