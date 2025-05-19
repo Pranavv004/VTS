@@ -60,7 +60,7 @@ public class ClientVerticle extends AbstractVerticle {
                 .setTrustStoreOptions(new io.vertx.core.net.JksOptions()
                         .setPath("client-truststore.jks")
                         .setPassword("password"))
-                .setHostnameVerificationAlgorithm("HTTPS") // Enable hostname verification
+                .setHostnameVerificationAlgorithm("HTTPS")
                 .setConnectTimeout(10000);
 
         NetClient client = vertx.createNetClient(options);
@@ -86,6 +86,11 @@ public class ClientVerticle extends AbstractVerticle {
                 socket = res.result();
                 System.out.println("Socket connected to port " + serverPort + " for " + virtualClientCount + " virtual clients");
                 sendLoginPackets();
+                // Keep the socket open for a short period to ensure the server processes all packets
+                vertx.setTimer(5000, id -> {
+                    socket.close();
+                    System.out.println("Socket closed after sending all packets to port " + serverPort);
+                });
             } else {
                 System.err.println("Connection failed to port " + serverPort + ": " + res.cause().getMessage());
             }
@@ -113,7 +118,6 @@ public class ClientVerticle extends AbstractVerticle {
     @Override
     public void stop() {
         if (socket != null) {
-            socket.close();
             System.out.println("Socket disconnected from port " + serverPort + " for " + virtualClients.size() + " virtual clients");
         }
     }

@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import javax.net.ssl.SSLServerSocketFactory;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -16,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 public class ServerApplication {
 
     public static void main(String[] args) {
-        // Enable SSL debugging
+        // Enable SSL debugging (optional, can comment out once issue is resolved)
         System.setProperty("javax.net.debug", "ssl:handshake:verbose");
 
         // Default port if not specified
@@ -83,16 +84,28 @@ public class ServerApplication {
 
     private static void handleClient(Socket clientSocket, int port) throws IOException {
         try (DataInputStream in = new DataInputStream(clientSocket.getInputStream())) {
-            // Read the length prefix (4 bytes)
-            int length = in.readInt();
-            // Read the packet data
-            byte[] packetBytes = new byte[length];
-            in.readFully(packetBytes);
-            String packet = new String(packetBytes);
-            // Parse IMEI from packet
-            String[] parts = packet.split(",");
-            String imei = parts.length > 3 ? parts[3] : "Unknown";
-            System.out.println("Server (port " + port + ") - Client connected, IMEI: " + imei + ", Login packet: " + packet);
+            // Read packets in a loop until the client closes the connection
+            while (true) {
+                try {
+                    // Read the length prefix (4 bytes)
+                    int length = in.readInt();
+                    // Read the packet data
+                    byte[] packetBytes = new byte[length];
+                    in.readFully(packetBytes);
+                    String packet = new String(packetBytes);
+                    // Parse IMEI from packet
+                    String[] parts = packet.split(",");
+                    String imei = parts.length > 3 ? parts[3] : "Unknown";
+                    System.out.println("Server (port " + port + ") - Client connected, IMEI: " + imei + ", Login packet: " + packet);
+                } catch (EOFException e) {
+                    // Client closed the connection
+                    System.out.println("Server (port " + port + ") - Client closed the connection");
+                    break;
+                } catch (IOException e) {
+                    System.err.println("Server (port " + port + ") - Error reading packet: " + e.getMessage());
+                    break;
+                }
+            }
         }
     }
 }
