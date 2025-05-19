@@ -8,11 +8,17 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 @SpringBootApplication
 public class ServerApplication {
 
     public static void main(String[] args) {
+        // Enable SSL debugging
+        System.setProperty("javax.net.debug", "ssl:handshake:verbose");
+
         // Default port if not specified
         int port = 8080;
         if (args.length > 0) {
@@ -27,8 +33,15 @@ public class ServerApplication {
         try {
             // Explicitly set keystore type to JKS
             System.setProperty("javax.net.ssl.keyStoreType", "JKS");
-            // Load keystore from classpath (relative path in src/main/resources)
-            System.setProperty("javax.net.ssl.keyStore", "server-keystore.jks");
+            // Load keystore from classpath and debug the path
+            URL keystoreUrl = ServerApplication.class.getClassLoader().getResource("server-keystore.jks");
+            if (keystoreUrl == null) {
+                throw new IllegalStateException("server-keystore.jks not found in classpath");
+            }
+            // Decode the URL path to handle spaces correctly
+            String keystorePath = URLDecoder.decode(keystoreUrl.getPath(), StandardCharsets.UTF_8);
+            System.out.println("Decoded keystore path: " + keystorePath);
+            System.setProperty("javax.net.ssl.keyStore", keystorePath);
             System.setProperty("javax.net.ssl.keyStorePassword", "password");
         } catch (Exception e) {
             System.err.println("Failed to configure SSL properties: " + e.getMessage());

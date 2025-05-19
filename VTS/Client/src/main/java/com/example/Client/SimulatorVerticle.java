@@ -7,7 +7,7 @@ public class SimulatorVerticle extends AbstractVerticle {
     @Override
     public void start() {
         int numberOfSockets = 2; // 2 sockets, each with 5 virtual clients
-        int[] serverPorts = {8080, 8081}; // Ports for 2 regional servers
+        int[] serverPorts = {8081, 8082}; // Ports for 2 regional servers
 
         for (int i = 0; i < numberOfSockets; i++) {
             final int port = serverPorts[i];
