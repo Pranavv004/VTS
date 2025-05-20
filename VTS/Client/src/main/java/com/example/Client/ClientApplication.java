@@ -14,12 +14,11 @@ public class ClientApplication {
 
     @PostConstruct
     public void deployVerticle() {
-        // Create Vertx instance manually
         Vertx vertx = Vertx.vertx();
-        // Create SimulatorVerticle instance manually
-        SimulatorVerticle simulatorVerticle = new SimulatorVerticle();
-        // Deploy the verticle
-        vertx.deployVerticle(simulatorVerticle, res -> {
+
+        SimulatorVerticle simulatorVerticle = new SimulatorVerticle();  //manages the deployment of ClientVerticle instances
+        
+        vertx.deployVerticle(simulatorVerticle, res -> { 		// Deploy the verticle
             if (res.succeeded()) {
                 System.out.println("SimulatorVerticle deployed successfully");
             } else {

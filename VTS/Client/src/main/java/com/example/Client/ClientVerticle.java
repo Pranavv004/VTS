@@ -55,22 +55,20 @@ public class ClientVerticle extends AbstractVerticle {
     @Override
     public void start() {
         int virtualClientCount = 5; // 5 virtual clients per socket
-        NetClientOptions options = new NetClientOptions()
+        NetClientOptions options = new NetClientOptions()  //Configures the client for SSL/TLS communication:
                 .setSsl(true)
-                .setTrustStoreOptions(new io.vertx.core.net.JksOptions()
-                        .setPath("client-truststore.jks")
-                        .setPassword("password"))
+                .setTrustStoreOptions(new io.vertx.core.net.JksOptions().setPath("client-truststore.jks").setPassword("password"))
                 .setHostnameVerificationAlgorithm("HTTPS")
                 .setConnectTimeout(10000);
 
         NetClient client = vertx.createNetClient(options);
 
-        // Initialize virtual clients with unique IMEIs
+        // Initialising virtual clients with data
         for (int i = 0; i < virtualClientCount; i++) {
             String imei = "869523059602" + String.format("%03d", (getVerticleIndex() * virtualClientCount) + i);
             virtualClients.add(new Client(
-                    "KL23H6667", // Vehicle Reg. No
-                    imei,        // Unique IMEI
+                    "KL23H6667", 
+                    imei,        
                     6.102,       // Firmware Version
                     1,           // Protocol Identifier
                     9.095031,    // Latitude
@@ -80,7 +78,6 @@ public class ClientVerticle extends AbstractVerticle {
             ));
         }
 
-        // Connect to regional server
         client.connect(serverPort, "localhost", res -> {
             if (res.succeeded()) {
                 socket = res.result();
@@ -109,6 +106,7 @@ public class ClientVerticle extends AbstractVerticle {
         if (socket != null) {
             Buffer buffer = Buffer.buffer();
             byte[] data = packet.getBytes();
+            System.out.println("\nBytes send"+data.length+"\n");
             buffer.appendInt(data.length); // Length prefix
             buffer.appendBytes(data);
             socket.write(buffer);

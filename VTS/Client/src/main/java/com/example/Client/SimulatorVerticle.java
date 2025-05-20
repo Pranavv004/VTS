@@ -3,7 +3,7 @@ package com.example.Client;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 
-public class SimulatorVerticle extends AbstractVerticle {
+public class SimulatorVerticle extends AbstractVerticle {     //AbstractVerticle, a base class for Vert.x verticles.
     @Override
     public void start() {
         int numberOfSockets = 2; // 2 sockets, each with 5 virtual clients
