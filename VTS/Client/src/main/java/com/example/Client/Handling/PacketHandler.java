@@ -90,7 +90,7 @@ public class PacketHandler {
 
         String packetString = packet.toString();
         byte[] packetBytes = packetString.getBytes(StandardCharsets.UTF_8);
-        System.out.println("Client " + imei + " - Size of actual location packet data: " + packetBytes.length + " bytes\n");
+//        System.out.println("Client " + imei + " - Size of actual location packet data: " + packetBytes.length + " bytes\n");
         if (packetBytes.length <= MAX_PACKET_SIZE) {
             out.writeInt(packetBytes.length);
             out.write(packetBytes);
@@ -108,13 +108,13 @@ public class PacketHandler {
 
                 String partHeader = String.format("$,PART,%s,%d,%d,%s,", sequenceId, i + 1, totalParts, imei);
                 byte[] headerBytes = partHeader.getBytes(StandardCharsets.UTF_8);
-                System.out.println("Client " + imei + " - Size of header for packet part " + (i + 1) + ": " + headerBytes.length + " bytes\n");
-                System.out.println("Client " + imei + " - Size of data for packet part " + (i + 1) + ": " + length + " bytes\n");
+//                System.out.println("Client " + imei + " - Size of header for packet part " + (i + 1) + ": " + headerBytes.length + " bytes\n");
+//                System.out.println("Client " + imei + " - Size of data for packet part " + (i + 1) + ": " + length + " bytes\n");
                 byte[] combinedBytes = new byte[headerBytes.length + length];
                 System.arraycopy(headerBytes, 0, combinedBytes, 0, headerBytes.length);
                 System.arraycopy(partBytes, 0, combinedBytes, headerBytes.length, length);
 
-                System.out.println("Client " + imei + " - Total size of packet part " + (i + 1) + ": " + combinedBytes.length + " bytes\n");
+//                System.out.println("Client " + imei + " - Total size of packet part " + (i + 1) + ": " + combinedBytes.length + " bytes\n");
                 out.writeInt(combinedBytes.length);
                 out.write(combinedBytes);
                 out.flush();

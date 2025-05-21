@@ -33,8 +33,8 @@ public class PacketReassembler {
             }
             packetParts.remove(sequenceId);
             String reassembledPacket = fullPacket.toString();
-            System.out.println("Server (port " + port + ") - Reassembled packet for IMEI " + imei + ": " + reassembledPacket + "\n");
-            System.out.println("Server (port " + port + ") - Size of reassembled packet for IMEI " + imei + ": " + reassembledPacket.getBytes().length + " bytes\n");
+            System.out.println("Server (port " + port + ") - Received Reassembled packet for IMEI " + imei + ": " + reassembledPacket + "\n");
+//            System.out.println("Server (port " + port + ") - Size of reassembled packet for IMEI " + imei + ": " + reassembledPacket.getBytes().length + " bytes\n");
         }
     }
 }
