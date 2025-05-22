@@ -10,12 +10,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 public class MainServerConnectionHandler {
-    private static final int MAIN_SERVER_PORT = 8099;
     private final int regionalPort;
-    private SSLSocket mainServerSocket;
-    private DataOutputStream mainServerOut;
-    private DataInputStream mainServerIn;
     private final Consumer<Void> onRequestCurrentLocation;
+    private SSLSocket socket;
+    private DataOutputStream out;
+    private DataInputStream in;
 
     public MainServerConnectionHandler(int regionalPort, Consumer<Void> onRequestCurrentLocation) {
         this.regionalPort = regionalPort;
@@ -24,7 +23,6 @@ public class MainServerConnectionHandler {
 
     public void connect() {
         try {
-            // Configure truststore for connecting to Main Server as a client
             System.setProperty("javax.net.ssl.trustStoreType", "JKS");
             URL truststoreUrl = MainServerConnectionHandler.class.getClassLoader().getResource("client-truststore.jks");
             if (truststoreUrl == null) {
@@ -35,26 +33,28 @@ public class MainServerConnectionHandler {
             System.setProperty("javax.net.ssl.trustStorePassword", "password");
 
             SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-            mainServerSocket = (SSLSocket) factory.createSocket("localhost", MAIN_SERVER_PORT);
-            mainServerOut = new DataOutputStream(mainServerSocket.getOutputStream());
-            mainServerIn = new DataInputStream(mainServerSocket.getInputStream());
-            //System.out.println("Regional Server (port " + regionalPort + ") - Connected to Main Server on port " + MAIN_SERVER_PORT + "\n");
+            socket = (SSLSocket) factory.createSocket("localhost", 8085); // Updated to match Main Server port
+            out = new DataOutputStream(socket.getOutputStream());
+            in = new DataInputStream(socket.getInputStream());
 
-            // Start a thread to listen for requests from Main Server
+            System.out.println("Regional Server (port " + regionalPort + ") - Connected to Main Server\n");
+
             new Thread(() -> {
                 try {
-                    while (!mainServerSocket.isClosed()) {
-                        int length = mainServerIn.readInt();
+                    while (!socket.isClosed()) {
+                        int length = in.readInt();
                         byte[] requestData = new byte[length];
-                        mainServerIn.readFully(requestData);
+                        in.readFully(requestData);
                         String request = new String(requestData);
                         if (request.equals("REQUEST_CURRENT_LOCATION")) {
                             System.out.println("Regional Server (port " + regionalPort + ") - Received REQUEST_CURRENT_LOCATION from Main Server\n");
                             onRequestCurrentLocation.accept(null);
+                        } else {
+                            System.out.println("Regional Server (port " + regionalPort + ") - Received unrecognized message from Main Server: " + request + "\n");
                         }
                     }
                 } catch (Exception e) {
-                    System.out.println("Regional Server (port " + regionalPort + ") - Main Server connection closed: " + e.getMessage() + "\n");
+                    System.err.println("Regional Server (port " + regionalPort + ") - Error handling Main Server connection: " + e.getMessage() + "\n");
                 }
             }).start();
         } catch (Exception e) {
@@ -62,13 +62,12 @@ public class MainServerConnectionHandler {
         }
     }
 
-    public void forwardPacket(byte[] packetBytes) {
+    public void forwardPacket(byte[] packet) {
         try {
-            if (mainServerOut != null) {
-                mainServerOut.writeInt(packetBytes.length);
-                mainServerOut.write(packetBytes);
-                mainServerOut.flush();
-            }
+            out.writeInt(packet.length);
+            out.write(packet);
+            out.flush();
+            System.out.println("Regional Server (port " + regionalPort + ") - Forwarded packet to Main Server: " + new String(packet) + "\n");
         } catch (Exception e) {
             System.err.println("Regional Server (port " + regionalPort + ") - Error forwarding packet to Main Server: " + e.getMessage() + "\n");
         }
@@ -76,8 +75,8 @@ public class MainServerConnectionHandler {
 
     public void close() {
         try {
-            if (mainServerSocket != null) {
-                mainServerSocket.close();
+            if (socket != null) {
+                socket.close();
             }
         } catch (Exception e) {
             System.err.println("Regional Server (port " + regionalPort + ") - Error closing Main Server connection: " + e.getMessage() + "\n");

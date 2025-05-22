@@ -9,6 +9,7 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -23,7 +24,6 @@ public class ServerApplication {
     private static final int PORT = Integer.parseInt(System.getProperty("server.port", "8094"));
     private MainServerConnectionHandler mainServerConnectionHandler;
     private PacketReassembler packetReassembler;
-    // Map to store DataOutputStream for each client (by client socket)
     private final ConcurrentHashMap<Socket, DataOutputStream> clientOutputs = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
@@ -47,18 +47,17 @@ public class ServerApplication {
             return;
         }
 
-        // Initialize Main Server connection
         mainServerConnectionHandler = new MainServerConnectionHandler(PORT, (Void) -> requestCurrentLocationFromClients());
         mainServerConnectionHandler.connect();
 
-        // Initialize PacketReassembler with MainServerConnectionHandler
         packetReassembler = new PacketReassembler(PORT, mainServerConnectionHandler);
 
         ExecutorService clientHandlerPool = Executors.newFixedThreadPool(10);
+        SSLServerSocket serverSocket = null;
 
         try {
             SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-            SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(PORT);
+            serverSocket = (SSLServerSocket) factory.createServerSocket(PORT);
             System.out.println("Server started on port " + PORT + "\n");
 
             while (true) {
@@ -68,35 +67,37 @@ public class ServerApplication {
                 clientHandlerPool.submit(() -> {
                     try (DataInputStream in = new DataInputStream(clientSocket.getInputStream());
                          DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream())) {
-                        // Store the output stream for this client
                         clientOutputs.put(clientSocket, out);
 
-                        // Handle incoming packets
-                        while (true) {
+                        while (!clientSocket.isClosed()) {
                             int length = in.readInt();
+                            if (length <= 0) {
+                                System.out.println("Server (port " + PORT + ") - Received invalid packet length from client " + clientSocket.getInetAddress() + "\n");
+                                break;
+                            }
                             byte[] packetBytes = new byte[length];
                             in.readFully(packetBytes);
                             String packet = new String(packetBytes);
+                            //System.out.println("Server (port " + PORT + ") - Received packet: " + packet + "\n");
 
-                            // Handle packet based on type
                             if (packet.startsWith("$,PART,")) {
                                 packetReassembler.handlePacketPart(packet);
                             } else if (packet.startsWith("$,LG,")) {
                                 String[] parts = packet.split(",");
                                 String imei = parts.length > 3 ? parts[3] : "Unknown";
-                                System.out.println("Server (port " + PORT + ") - IMEI: " + imei + ", Login packet: " + packet + "\n");
-                                // Forward login packet immediately
+                                //System.out.println("Server (port " + PORT + ") - IMEI: " + imei + ", Send Login packet: " + packet + "\n");
                                 mainServerConnectionHandler.forwardPacket(packetBytes);
                             } else {
                                 String[] parts = packet.split(",");
                                 String imei = parts.length > 7 ? parts[7] : "Unknown";
-                                System.out.println("Server (port " + PORT + ") - IMEI: " + imei + ", Location packet: " + packet + "\n");
-                                // Forward location packet immediately (in case it wasn't split)
+                                //System.out.println("Server (port " + PORT + ") - IMEI: " + imei + ", Send Location packet: " + packet + "\n");
                                 mainServerConnectionHandler.forwardPacket(packetBytes);
                             }
                         }
+                    } catch (EOFException e) {
+                        System.out.println("Server (port " + PORT + ") - Client " + clientSocket.getInetAddress() + " disconnected gracefully\n");
                     } catch (Exception e) {
-                        System.out.println("Server (port " + PORT + ") - Connection Closed: " + e.getMessage() + "\n");
+                        System.out.println("Server (port " + PORT + ") - Error with client " + clientSocket.getInetAddress() + ": " + e.getMessage() + "\n");
                     } finally {
                         clientOutputs.remove(clientSocket);
                         try {
@@ -112,10 +113,17 @@ public class ServerApplication {
         } finally {
             clientHandlerPool.shutdown();
             mainServerConnectionHandler.close();
+            try {
+                if (serverSocket != null) {
+                    serverSocket.close();
+                }
+            } catch (Exception e) {
+                System.err.println("Error closing server socket: " + e.getMessage() + "\n");
+            }
         }
     }
 
-    private void requestCurrentLocationFromClients() {     //sends a REQUEST_LOCATION message to all connected clients.
+    private void requestCurrentLocationFromClients() {
         clientOutputs.forEach((clientSocket, out) -> {
             try {
                 String request = "REQUEST_LOCATION";
