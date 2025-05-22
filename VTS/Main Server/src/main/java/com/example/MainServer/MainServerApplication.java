@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 
 @SpringBootApplication
 public class MainServerApplication {
-    private static final int PORT = 8095;
+    private static final int PORT = 8099;
     // Map to store DataOutputStream for each Regional Server (by port)
     private final ConcurrentHashMap<Integer, DataOutputStream> regionalServerOutputs = new ConcurrentHashMap<>();
 
@@ -68,8 +68,8 @@ public class MainServerApplication {
                                     out.writeInt(request.length());
                                     out.write(request.getBytes());
                                     out.flush();
-                                    System.out.println("Main Server (port " + PORT + ") - Sent REQUEST_CURRENT_LOCATION to Regional Server at " + regionalSocket.getInetAddress() + ":" + regionalPort + "\n");
-                                    Thread.sleep(15000); // 15 seconds interval
+                                    System.out.println("\nSent REQUEST_CURRENT_LOCATION to Regional Server at " + regionalSocket.getInetAddress() + ":" + regionalPort + "\n");
+                                    Thread.sleep(30000); // 15 seconds interval
                                 }
                             } catch (Exception e) {
                                 System.out.println("Main Server (port " + PORT + ") - Error sending REQUEST_CURRENT_LOCATION: " + e.getMessage() + "\n");
@@ -82,10 +82,10 @@ public class MainServerApplication {
                             byte[] packetBytes = new byte[length];
                             in.readFully(packetBytes);
                             String packet = new String(packetBytes);
-                            System.out.println("Main Server (port " + PORT + ") - Received packet from Regional Server at " + regionalSocket.getInetAddress() + ":" + regionalPort + ": " + packet + "\n");
+                            System.out.println("Received packet from Regional Server at " + regionalSocket.getInetAddress() + ":" + regionalPort + ": " + packet + "\n");
                         }
                     } catch (Exception e) {
-                        System.out.println("Main Server (port " + PORT + ") - Connection Closed for Regional Server at port " + regionalPort + ": " + e.getMessage() + "\n");
+                        System.out.println("\nConnection Closed for Regional Server at port " + regionalPort + ": " + e.getMessage() + "\n");
                     } finally {
                         regionalServerOutputs.remove(regionalPort);
                         try {
@@ -103,8 +103,4 @@ public class MainServerApplication {
         }
     }
 
-    // Getter for regionalServerOutputs (for future use if needed)
-    public ConcurrentHashMap<Integer, DataOutputStream> getRegionalServerOutputs() {
-        return regionalServerOutputs;
-    }
 }

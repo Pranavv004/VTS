@@ -20,9 +20,9 @@ import java.util.concurrent.Executors;
 @SpringBootApplication
 public class ServerApplication {
 
-    private static final int PORT = Integer.parseInt(System.getProperty("server.port", "8093"));
-    private final PacketReassembler packetReassembler = new PacketReassembler(PORT);
+    private static final int PORT = Integer.parseInt(System.getProperty("server.port", "8094"));
     private MainServerConnectionHandler mainServerConnectionHandler;
+    private PacketReassembler packetReassembler;
     // Map to store DataOutputStream for each client (by client socket)
     private final ConcurrentHashMap<Socket, DataOutputStream> clientOutputs = new ConcurrentHashMap<>();
 
@@ -51,6 +51,9 @@ public class ServerApplication {
         mainServerConnectionHandler = new MainServerConnectionHandler(PORT, (Void) -> requestCurrentLocationFromClients());
         mainServerConnectionHandler.connect();
 
+        // Initialize PacketReassembler with MainServerConnectionHandler
+        packetReassembler = new PacketReassembler(PORT, mainServerConnectionHandler);
+
         ExecutorService clientHandlerPool = Executors.newFixedThreadPool(10);
 
         try {
@@ -68,22 +71,6 @@ public class ServerApplication {
                         // Store the output stream for this client
                         clientOutputs.put(clientSocket, out);
 
-                        // Send REQUEST_LOCATION every 10 seconds
-                        new Thread(() -> {
-                            try {
-                                while (!clientSocket.isClosed()) {
-                                    String request = "REQUEST_LOCATION";
-                                    out.writeInt(request.length());
-                                    out.write(request.getBytes());
-                                    out.flush();
-                                    System.out.println("Server (port " + PORT + ") - Sent REQUEST_LOCATION to client from " + clientSocket.getInetAddress() + "\n");
-                                    Thread.sleep(10000); // 10 seconds interval
-                                }
-                            } catch (Exception e) {
-                                System.out.println("Server (port " + PORT + ") - Error sending REQUEST_LOCATION: " + e.getMessage() + "\n");
-                            }
-                        }).start();
-
                         // Handle incoming packets
                         while (true) {
                             int length = in.readInt();
@@ -91,19 +78,21 @@ public class ServerApplication {
                             in.readFully(packetBytes);
                             String packet = new String(packetBytes);
 
-                            // Forward the packet to Main Server
-                            mainServerConnectionHandler.forwardPacket(packetBytes);
-
+                            // Handle packet based on type
                             if (packet.startsWith("$,PART,")) {
                                 packetReassembler.handlePacketPart(packet);
                             } else if (packet.startsWith("$,LG,")) {
                                 String[] parts = packet.split(",");
                                 String imei = parts.length > 3 ? parts[3] : "Unknown";
                                 System.out.println("Server (port " + PORT + ") - IMEI: " + imei + ", Login packet: " + packet + "\n");
+                                // Forward login packet immediately
+                                mainServerConnectionHandler.forwardPacket(packetBytes);
                             } else {
                                 String[] parts = packet.split(",");
                                 String imei = parts.length > 7 ? parts[7] : "Unknown";
                                 System.out.println("Server (port " + PORT + ") - IMEI: " + imei + ", Location packet: " + packet + "\n");
+                                // Forward location packet immediately (in case it wasn't split)
+                                mainServerConnectionHandler.forwardPacket(packetBytes);
                             }
                         }
                     } catch (Exception e) {
@@ -126,7 +115,7 @@ public class ServerApplication {
         }
     }
 
-    private void requestCurrentLocationFromClients() {
+    private void requestCurrentLocationFromClients() {     //sends a REQUEST_LOCATION message to all connected clients.
         clientOutputs.forEach((clientSocket, out) -> {
             try {
                 String request = "REQUEST_LOCATION";

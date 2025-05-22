@@ -40,7 +40,7 @@ public class ClientApplication {
         }
 
         int clientsPerServer = 5;
-        int[] serverPorts = {8091, 8092};
+        int[] serverPorts = {8089, 8090};
 
         for (int port : serverPorts) {
             for (int i = 0; i < clientsPerServer; i++) {

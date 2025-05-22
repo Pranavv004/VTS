@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 public class MainServerConnectionHandler {
-    private static final int MAIN_SERVER_PORT = 8095;
+    private static final int MAIN_SERVER_PORT = 8099;
     private final int regionalPort;
     private SSLSocket mainServerSocket;
     private DataOutputStream mainServerOut;
@@ -38,7 +38,7 @@ public class MainServerConnectionHandler {
             mainServerSocket = (SSLSocket) factory.createSocket("localhost", MAIN_SERVER_PORT);
             mainServerOut = new DataOutputStream(mainServerSocket.getOutputStream());
             mainServerIn = new DataInputStream(mainServerSocket.getInputStream());
-            System.out.println("Regional Server (port " + regionalPort + ") - Connected to Main Server on port " + MAIN_SERVER_PORT + "\n");
+            //System.out.println("Regional Server (port " + regionalPort + ") - Connected to Main Server on port " + MAIN_SERVER_PORT + "\n");
 
             // Start a thread to listen for requests from Main Server
             new Thread(() -> {
