@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 
 @SpringBootApplication
 public class MainServerApplication {
-    private static final int PORT = 8085; // Updated to match logs
+    private static final int PORT = 8097; 
     private final ConcurrentHashMap<Integer, DataOutputStream> regionalServerOutputs = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {

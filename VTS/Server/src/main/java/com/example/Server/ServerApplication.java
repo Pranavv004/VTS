@@ -24,7 +24,7 @@ public class ServerApplication {
     private static final int PORT = Integer.parseInt(System.getProperty("server.port", "8094"));
     private MainServerConnectionHandler mainServerConnectionHandler;
     private PacketReassembler packetReassembler;
-    private final ConcurrentHashMap<Socket, DataOutputStream> clientOutputs = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Socket, DataOutputStream> clientOutputs = new ConcurrentHashMap<>();  //A thread safe map 
 
     public static void main(String[] args) {
         SpringApplication.run(ServerApplication.class, args);
@@ -52,7 +52,7 @@ public class ServerApplication {
 
         packetReassembler = new PacketReassembler(PORT, mainServerConnectionHandler);
 
-        ExecutorService clientHandlerPool = Executors.newFixedThreadPool(10);
+        ExecutorService clientHandlerPool = Executors.newFixedThreadPool(10);  //Used to create a thread pool for handling client connections concurrently
         SSLServerSocket serverSocket = null;
 
         try {
@@ -83,8 +83,8 @@ public class ServerApplication {
                             if (packet.startsWith("$,PART,")) {
                                 packetReassembler.handlePacketPart(packet);
                             } else if (packet.startsWith("$,LG,")) {
-                                String[] parts = packet.split(",");
-                                String imei = parts.length > 3 ? parts[3] : "Unknown";
+                                //String[] parts = packet.split(",");
+                                //String imei = parts.length > 3 ? parts[3] : "Unknown";
                                 //System.out.println("Server (port " + PORT + ") - IMEI: " + imei + ", Send Login packet: " + packet + "\n");
                                 mainServerConnectionHandler.forwardPacket(packetBytes);
                             } else {

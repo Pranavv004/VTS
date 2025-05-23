@@ -33,18 +33,19 @@ public class ClientApplication {
             //System.out.println("Decoded truststore path: " + truststorePath + "\n");
             System.setProperty("javax.net.ssl.trustStore", truststorePath);
             System.setProperty("javax.net.ssl.trustStorePassword", "password");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println("Failed to configure SSL properties: " + e.getMessage() + "\n");
             e.printStackTrace();
             return;
         }
 
         int clientsPerServer = 5;
-        int[] serverPorts = {8083, 8084}; // Updated to match logs
-
+        int[] serverPorts = {8083, 8084}; 
+        
         for (int port : serverPorts) {
             for (int i = 0; i < clientsPerServer; i++) {
-                int clientIndex = (port == 8095 ? 0 : 1) * clientsPerServer + i;
+                int clientIndex = (port == 8083 ? 0 : 1) * clientsPerServer + i;
                 String imei = "869523059602" + String.format("%03d", clientIndex);
 
                 new Thread(() -> {

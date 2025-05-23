@@ -1,6 +1,6 @@
 package com.example.Client.PacketHandling;
 
-public record LocationPacket(
+public record LocationPacket(  //immutable data objects
     String startChar,
     String header,
     String vendorId,

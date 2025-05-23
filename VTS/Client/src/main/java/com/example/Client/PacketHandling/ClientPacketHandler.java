@@ -60,7 +60,7 @@ public class ClientPacketHandler {
         String[] neighborLacs = new String[4];
         String[] neighborSignalStrengths = new String[4];
         for (int i = 0; i < 4; i++) {
-            neighborCellIds[i] = String.format("%04X", RANDOM.nextInt(65536));
+            neighborCellIds[i] = String.format("%04X", RANDOM.nextInt(65536));  //4 digit hexadecimal
             neighborLacs[i] = String.format("%04X", RANDOM.nextInt(65536));
             neighborSignalStrengths[i] = String.valueOf(RANDOM.nextInt(100));
         }
@@ -99,8 +99,8 @@ public class ClientPacketHandler {
                 String partHeader = String.format("$,PART,%s,%d,%d,%s,", sequenceId, i + 1, totalParts, imei);
                 byte[] headerBytes = partHeader.getBytes(StandardCharsets.UTF_8);
                 byte[] combinedBytes = new byte[headerBytes.length + length];
-                System.arraycopy(headerBytes, 0, combinedBytes, 0, headerBytes.length);
-                System.arraycopy(partBytes, 0, combinedBytes, headerBytes.length, length);
+                System.arraycopy(headerBytes, 0, combinedBytes, 0, headerBytes.length);  //add header to combined
+                System.arraycopy(partBytes, 0, combinedBytes, headerBytes.length, length);	//add data to combined
 
                 out.writeInt(combinedBytes.length);
                 out.write(combinedBytes);
